@@ -1,0 +1,1 @@
+python3 decode_seq2seq.py --model_type albert_1 --model_name_or_path voidful/albert_chinese_base --model_recover_path ../output_dir_albert_f/model.11.bin --max_seq_length 512 --input_file ../data_lbh/text.txt  --output_file ./predict_lbh.json --do_lower_case --batch_size 1 --beam_size 1 --max_tgt_length 128

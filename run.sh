@@ -1,0 +1,1 @@
+python3 -u run_seq2seq.py --data_dir ../data/ --src_file train_data.json --model_type unilm --model_name_or_path ../data/torch_unilm_model --output_dir ../output_dir_test/ --max_seq_length 512 --max_position_embeddings 512 --do_train --train_batch_size 32 --learning_rate 1e-5 --num_train_epochs 5
