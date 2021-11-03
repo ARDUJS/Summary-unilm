@@ -11,7 +11,7 @@ from pathlib import Path
 from tqdm import tqdm, trange
 import numpy as np
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
 
 import torch
 from torch.utils.data import RandomSampler
@@ -20,15 +20,19 @@ import torch.distributed as dist
 
 from tokenization_unilm import UnilmTokenizer, WhitespaceTokenizer
 from modeling_unilm import UnilmForSeq2Seq, UnilmConfig
-from transformers import AdamW, get_linear_schedule_with_warmup
+# from modeling_nazha import NeZhaForSeq2Seq, NeZhaConfig 
+from transformers import AdamW, get_linear_schedule_with_warmup, BertTokenizer
 
 import utils_seq2seq
 
+
+MODEL_CLASSES = {
+    'unilm': (UnilmConfig, UnilmForSeq2Seq, UnilmTokenizer),
+    # 'nezha': (NeZhaConfig, NeZhaForSeq2Seq, BertTokenizer)
+}
+
 ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys())
                   for conf in (UnilmConfig,)), ())
-MODEL_CLASSES = {
-    'unilm': (UnilmConfig, UnilmForSeq2Seq, UnilmTokenizer)
-}
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                     datefmt='%m/%d/%Y %H:%M:%S',
@@ -259,7 +263,6 @@ def main():
         dist.barrier()
 
     model.to(device)
-
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
     no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
@@ -332,14 +335,14 @@ def main():
                 batch = [
                     t.to(device) if t is not None else None for t in batch]
                 input_ids, segment_ids, input_mask, lm_label_ids, masked_pos, masked_weights, _ = batch
-                print(tokenizer.convert_ids_to_tokens(input_ids[0]))
+                # print(tokenizer.convert_ids_to_tokens(input_ids[0]))
                 # print("segment_ids", segment_ids[0])
                 # print("input_mask", input_mask[0].shape, input_mask[0][0][:200], input_mask[0][0].sum(), input_mask[0][1][:200], input_mask[0][1][:200].sum(),\
                 #       input_mask[0][129][:200], input_mask[0][129].sum())
                 # print("lm_label_ids", lm_label_ids[0])
                 # print("masked_pos", masked_pos[0])
                 # print("masked_weights", masked_weights[0])
-                input()
+                # input()
 
                 masked_lm_loss = model(input_ids, segment_ids, input_mask, lm_label_ids,
                                        masked_pos=masked_pos, masked_weights=masked_weights)

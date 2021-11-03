@@ -200,12 +200,17 @@ class UnilmModel(UnilmPreTrainedModel):
             extended_attention_mask = attention_mask.unsqueeze(1)
         else:
             raise NotImplementedError
-        extended_attention_mask = extended_attention_mask.to(
-            dtype=next(self.parameters()).dtype)  # fp16 compatibility
+        # extended_attention_mask = extended_attention_mask.to(
+        #     dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
         return extended_attention_mask
 
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, output_all_encoded_layers=True):
+    def forward(
+            self, 
+            input_ids, 
+            token_type_ids=None, 
+            attention_mask=None, 
+            output_all_encoded_layers=True):
         extended_attention_mask = self.get_extended_attention_mask(
             input_ids, token_type_ids, attention_mask)
 
@@ -226,8 +231,11 @@ class UnilmModelIncr(UnilmModel):
 
     def forward(self, input_ids, token_type_ids, position_ids, attention_mask, output_all_encoded_layers=True, prev_embedding=None,
                 prev_encoded_layers=None):
+        # print("attention_mask", attention_mask.shape, attention_mask)
         extended_attention_mask = self.get_extended_attention_mask(
             input_ids, token_type_ids, attention_mask)
+        # print("extended_attention_mask", extended_attention_mask.shape, extended_attention_mask)
+        # input()
 
         embedding_output = self.embeddings(
             input_ids, token_type_ids, position_ids)
@@ -599,7 +607,7 @@ class UnilmForSeq2SeqDecode(UnilmPreTrainedModel):
         next_pos = input_length
 
         n = 0
-        while next_pos < output_length and n < 64:
+        while next_pos < output_length and n < 32:
         # while next_pos < output_length :
             curr_length = list(curr_ids.size())[1]   # 384
 
@@ -709,7 +717,10 @@ class UnilmForSeq2SeqDecode(UnilmPreTrainedModel):
                 log_scores += (forbid_word_mask * -10000.0)
             if self.min_len and (next_pos-input_length+1 <= self.min_len):
                 log_scores[:, :, self.eos_id].fill_(-10000.0)
+            # print("log_scores", log_scores.shape)
             kk_scores, kk_ids = torch.topk(log_scores, k=K)
+            # print("kk_scores", kk_scores, kk_scores.shape)
+            # input()
             if len(total_scores) == 0:
                 k_ids = torch.reshape(kk_ids, [batch_size, K])
                 back_ptrs = torch.zeros(batch_size, K, dtype=torch.long)
@@ -722,7 +733,13 @@ class UnilmForSeq2SeqDecode(UnilmPreTrainedModel):
                 kk_scores += last_eos * (-10000.0) + last_seq_scores
                 kk_scores = torch.reshape(kk_scores, [batch_size, K * K])
                 k_scores, k_ids = torch.topk(kk_scores, k=K)
-                back_ptrs = torch.div(k_ids, K)
+                # print("kk_scores", kk_scores, kk_scores.shape)
+                # print("k_scores, k_ids", k_scores, k_ids, k_scores.shape, k_ids.shape)
+                # print("K", K)
+                back_ptrs = torch.floor_divide(k_ids, K)
+                # back_ptrs = torch.div(k_ids, K)
+                # print("back_ptrs", back_ptrs)
+                # input()
                 kk_ids = torch.reshape(kk_ids, [batch_size, K * K])
                 k_ids = torch.gather(kk_ids, 1, k_ids)
             step_back_ptrs.append(back_ptrs)
@@ -872,6 +889,8 @@ class UnilmForSeq2SeqDecode(UnilmPreTrainedModel):
                 seq = [wids_list[frame_id][pos_in_frame]]
                 for fid in range(frame_id, 0, -1):
                     pos_in_frame = ptrs[fid][pos_in_frame]
+                    # print("pos_in_frame", pos_in_frame)
+                    # pos_in_frame = int(pos_in_frame)
                     seq.append(wids_list[fid - 1][pos_in_frame])
                 seq.reverse()
                 traces['pred_seq'].append(seq)

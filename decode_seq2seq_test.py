@@ -37,7 +37,7 @@ import numpy as np
 import json
 import rouge_w
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3,4,5,6,7"
 use_gpu = True
 import torch
 from torch.utils.data import DataLoader, RandomSampler
@@ -49,7 +49,7 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 
 try:
     from modeling_unilm import UnilmForSeq2SeqDecode, UnilmConfig
-    # from modeling_albert_test import AlbertForSeq2SeqDecode
+    from modeling_albert_test import AlbertForSeq2SeqDecode
     # from modeling_nazha import NeZhaForSeq2SeqDecode, NeZhaConfig
 except Exception as e:
     print(e)
@@ -64,7 +64,7 @@ import utils_seq2seq
 #                   for conf in (UnilmConfig,)), ())
 MODEL_CLASSES = {
     'unilm': (UnilmConfig, UnilmForSeq2SeqDecode, UnilmTokenizer),
-    # 'albert_1': (AutoConfig, AlbertForSeq2SeqDecode, BertTokenizer),
+    'albert_1': (AutoConfig, AlbertForSeq2SeqDecode, BertTokenizer),
     # 'nezha': (NeZhaConfig, NeZhaForSeq2SeqDecode, BertTokenizer)
 }
 
@@ -139,7 +139,6 @@ def main():
                         help="maximum length of target sequence")
     parser.add_argument("--poster", type=bool, default=False,
                         help="is post")
-    parser.add_argument("--do_raw", action='store_true')
             
 
     args = parser.parse_args()
@@ -214,15 +213,10 @@ def main():
         max_src_length = args.max_seq_length - 2 - args.max_tgt_length
 
         with open(args.input_file, encoding="utf-8") as fin:
-            lines = fin.readlines()
-            if args.do_raw:
-                input_lines = [x.strip() for x in lines]
-                ans = ["" for x in lines]
-                src = [x.strip() for x in lines]
-            else:
-                input_lines = [json.loads(json.dumps(eval(x)))['src_text'].strip() for x in lines]
-                ans = [json.loads(json.dumps(eval(x)))['tgt_text'].strip() for x in lines]
-                src = [json.loads(json.dumps(eval(x)))['src_text'].strip() for x in lines]
+            lines = fin.readlines()[:1000]
+            input_lines = [json.loads(json.dumps(eval(x)))['src_text'].strip() for x in lines]
+            ans = [json.loads(json.dumps(eval(x)))['tgt_text'].strip() for x in lines]
+            src = [json.loads(json.dumps(eval(x)))['src_text'].strip() for x in lines]
             if args.subset > 0:
                 logger.info("Decoding subset: %d", args.subset)
                 input_lines = input_lines[:args.subset]

@@ -1,7 +1,7 @@
 from rouge_metric import PyRouge
 import os
 import json
-
+from tools import save_json
 
 def read_file(filename):
     with open(filename,"r") as f:
@@ -20,6 +20,7 @@ def avg_rouge(ref_file,pre_file, source_file, name=""):
     rouge2r=0
     rouge3r=0
     str1 = "predict tgt_text    src_text\n"
+    res = []
     for ref, pre, source in zip(ref_file, pre_file, source_file):
         # ref = json.loads(json.dumps(eval(ref)))
         # source = ref['src_text']
@@ -27,20 +28,22 @@ def avg_rouge(ref_file,pre_file, source_file, name=""):
         pre = " ".join(pre)
         ref = " ".join(ref)
         str1 += ("".join(pre.split(" ")).strip() + "\t" + "".join(ref.split(" ")).strip() +"\t"+ source.strip() + "\n") 
+        res.append({
+            "predict": "".join(pre.split(" ")).strip(),
+            "tgt_text": "".join(ref.split(" ")).strip(),
+            "src_text": source.strip()
+            })
         rouge = PyRouge(rouge_n=(1, 2, 4), rouge_l=True, rouge_w=False, rouge_s=False, rouge_su=False, skip_gap=4)
         # print(pre, ref)
         score = rouge.evaluate([pre],[[ref]])
-        rouge1r += score['rouge-1']['r']
-        rouge2r += score['rouge-2']['r']
-        rouge3r += score['rouge-l']['r']
-    str1 = str(rouge1r/len(ref_file)) + "\n" + str1
-    print("/data/lw/lbh/Unilm/src/result/"+name.replace("/", "_")+"1.compare_nw")
-    f = open("/data/lw/lbh/Unilm/src/result/"+name.replace("/", "_")+"1.compare_nw", "w", encoding="utf-8")
-    f.write(str1)
-    f.close()
+        rouge1r += score['rouge-1']['f']
+        rouge2r += score['rouge-2']['f']
+        rouge3r += score['rouge-l']['f']
+    name = name.replace(".", "_").replace("/", "_")+"_compare.json"
+    save_json(f"../result/{name}", res)
     # print(str1)
     print("rouge-1:%.4f rouge-2:%.4f rouge-l:%.4f" %( rouge1r/_len,rouge2r/_len,rouge3r/_len))
-    return rouge1r/len(ref_file),rouge2r/len(ref_file),rouge3r/len(ref_file)
+    return rouge1r/len(ref_file), rouge2r/len(ref_file), rouge3r/len(ref_file)
 
 #if __name__ == "__main__":
 #    ref_dir = "./song_data/test_data.json"

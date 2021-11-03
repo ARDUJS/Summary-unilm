@@ -858,5 +858,9 @@ class Preprocess4Seq2seqDecode(Pipeline):
 
         input_mask[second_st:second_end, second_st:second_end].copy_(
             self._tril_matrix[:second_end-second_st, :second_end-second_st])
+        
+        # print(input_ids, len(input_ids), len(input_ids))
+        # print(input_mask, len(input_mask), len(input_mask))
+        # input()
 
         return (input_ids, segment_ids, position_ids, input_mask)
